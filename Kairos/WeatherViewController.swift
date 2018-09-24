@@ -21,7 +21,7 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate {
 
     //TODO: Declare instance variables here
     let locationManager = CLLocationManager()
-
+    let weatherDataModel = WeatherDataModel()
     
     //Pre-linked IBOutlets
     @IBOutlet weak var weatherIcon: UIImageView!
@@ -54,10 +54,9 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate {
             
             if response.result.isSuccess {
                 
-                print("ok")
                 let weatherJSON : JSON = JSON(response.result.value!)
                 
-                print(weatherJSON)
+                self.updateWeatherData(json: weatherJSON)
                 
             } else {
                 self.cityLabel.text = response.error?.localizedDescription
@@ -75,7 +74,22 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate {
    
     
     //Write the updateWeatherData method here:
-    
+    func updateWeatherData (json: JSON) {
+        
+        if let tempResult = json["main"]["temp"].double {
+            
+        
+        
+        weatherDataModel.temperature = Int(tempResult - 273.15)
+        weatherDataModel.city = json["name"].stringValue
+        weatherDataModel.condition = json["weather"][0]["id"].intValue
+        weatherDataModel.weatherIconName = weatherDataModel.updateWeatherIcon(condition: weatherDataModel.condition)
+        
+        updateUIWithWeatherData()
+        } else {
+            cityLabel.text = "Weather Unavailable"
+        }
+    }
 
     
     
@@ -85,7 +99,11 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate {
     
     
     //Write the updateUIWithWeatherData method here:
-    
+    func updateUIWithWeatherData() {
+        temperatureLabel.text = String(describing: weatherDataModel.temperature)
+        cityLabel.text = weatherDataModel.city
+        weatherIcon.image = UIImage(named: weatherDataModel.weatherIconName)
+    }
     
     
     
@@ -100,6 +118,7 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate {
         let location = locations.last!
         if location.horizontalAccuracy > 0 {
             locationManager.stopUpdatingLocation()
+            locationManager.delegate = nil
         }
         
         let latitude = String(location.coordinate.latitude)
